@@ -1,0 +1,25 @@
+# ============================================================
+# AI Partner Agent — Docker Compose
+# ============================================================
+
+version: "3.8"
+
+services:
+  ai-partner-agent:
+    build: .
+    container_name: ai-partner-agent
+    ports:
+      - "8501:8501"
+    volumes:
+      # 持久化数据卷：会话、日志、ChromaDB 记忆
+      - ./sessions:/app/sessions
+      - ./logs:/app/logs
+      - ./memory_store:/app/memory_store
+      # 配置文件（可选，容器内已有 .env.example）
+      - ./.env:/app/.env
+    environment:
+      # 环境变量（与 .env 文件等效）
+      # 也可通过 .env 文件配置
+      - STREAMLIT_SERVER_ADDRESS=0.0.0.0
+      - STREAMLIT_SERVER_PORT=8501
+    restart: unless-stopped

@@ -1,0 +1,37 @@
+# Git
+.git/
+.gitignore
+
+# Python
+__pycache__/
+*.py[codz]
+*.pyc
+.env
+.venv/
+venv/
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Runtime directories (mounted as volumes in production)
+memory_store/
+logs/
+sessions/
+
+# IDE & OS
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Personal docs
+简历项目描述.md
+面试问题准备.md
+项目状态快照.md
+项目详细说明.md
+项目开发记录.md

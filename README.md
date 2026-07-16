@@ -29,6 +29,7 @@
 | 工具    | Tavily / Calculator / wttr.in            |
 | 记忆    | ChromaDB（向量语义检索 + RAG）           |
 | 日志    | 自定义 logging 模块（控制台 + 文件输出） |
+| 部署    | Docker / Docker Compose                  |
 
 ## 架构
 
@@ -38,22 +39,65 @@ app.py (UI 层) → react_agent.py (Agent 层) → tools.py (工具层)
               memory.py (ChromaDB 长期记忆)
 ```
 
+## Docker 部署（推荐）
+
+### 1. 配置环境变量
+
+```bash
+cp .env.example .env
+# 编辑 .env 填入你的 API Key
+```
+
+### 2. 使用 Docker Compose 启动（一键）
+
+```bash
+docker compose up -d --build
+```
+
+打开 http://localhost:8501 即可使用。
+
+### 3. 单独使用 Docker
+
+```bash
+# 构建镜像
+docker build -t ai-partner-agent .
+
+# 运行容器
+docker run -p 8501:8501 \
+  -v ./sessions:/app/sessions \
+  -v ./logs:/app/logs \
+  -v ./memory_store:/app/memory_store \
+  -v ./.env:/app/.env \
+  ai-partner-agent
+```
+
+### 4. 停止容器
+
+```bash
+docker compose down
+```
+
 ## 快速开始
 
-### 1. 克隆仓库
+### 选项 A：Docker 部署（推荐）
 
 ```bash
 git clone https://github.com/NanZhi-hub/ai-partner-agent.git
 cd ai-partner-agent
+cp .env.example .env
+# 编辑 .env 填入你的 API Key
+docker compose up -d --build
 ```
 
-### 2. 安装依赖
+打开 http://localhost:8501 即可使用。
+
+### 选项 B：本地运行
 
 ```bash
+git clone https://github.com/NanZhi-hub/ai-partner-agent.git
+cd ai-partner-agent
 pip install -r requirements.txt
 ```
-
-### 3. 配置环境变量
 
 复制 `.env.example` 为 `.env`，填入你的 API Key：
 
@@ -63,7 +107,7 @@ TAVILY_API_KEY=your_tavily_api_key
 LLM_MODEL_ID=deepseek-chat
 ```
 
-### 4. 启动应用
+启动应用：
 
 ```bash
 python -m streamlit run app.py
@@ -95,6 +139,9 @@ ai-partner-agent/
 ├── logs/                    # 日志文件（按日轮转，保留7天）
 ├── sessions/               # 会话持久化存储
 ├── memory_store/           # 长期记忆向量数据库存储
+├── Dockerfile              # Docker 镜像构建
+├── docker-compose.yml      # Docker Compose 编排（一键启动）
+├── .dockerignore           # Docker 构建排除配置
 ├── .env.example            # 环境变量模板
 ├── requirements.txt
 └── README.md
