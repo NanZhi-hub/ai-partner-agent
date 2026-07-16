@@ -8,6 +8,10 @@ import sys
 import datetime
 import requests
 
+from .logger import get_logger
+
+logger = get_logger("agent.tools")
+
 # Windows 终端 UTF-8 兼容
 if sys.stdout.encoding != 'utf-8':
     sys.stdout.reconfigure(encoding='utf-8')
@@ -18,7 +22,7 @@ def web_search(query: str) -> str:
     基于 Tavily 的 AI 搜索引擎工具。
     专为 AI Agent 设计，返回结构化结果和总结性答案。
     """
-    print(f"🔍 正在执行 [Tavily] 网页搜索: {query}")
+    logger.info(f"🔍 正在执行 [Tavily] 网页搜索: {query}")
     try:
         api_key = os.getenv("TAVILY_API_KEY")
         if not api_key:
@@ -60,7 +64,7 @@ def calculator(expression: str) -> str:
     计算数学表达式
     支持 + - * / 和括号运算
     """
-    print(f"🧮 正在计算: {expression}")
+    logger.info(f"🧮 正在计算: {expression}")
     try:
         # 安全过滤：只允许数字和运算符
         safe_chars = set("0123456789+-*/().,% ")
@@ -90,7 +94,7 @@ def get_weather(city: str) -> str:
     查询指定城市的实时天气
     使用 wttr.in（免费，无需 API Key）
     """
-    print(f"🌤️ 正在查询天气: {city}")
+    logger.info(f"🌤️ 正在查询天气: {city}")
     try:
         response = requests.get(
             f"https://wttr.in/{city}?format=%C+%t+%h+%w",

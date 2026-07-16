@@ -12,6 +12,10 @@ from typing import List, Dict, Optional
 import chromadb
 from chromadb.config import Settings
 
+from .logger import get_logger
+
+logger = get_logger("agent.memory")
+
 # Windows 终端 UTF-8 兼容
 if sys.stdout.encoding != 'utf-8':
     sys.stdout.reconfigure(encoding='utf-8')
@@ -69,7 +73,7 @@ class MemoryManager:
         )
 
         self.memory_count = self.collection.count()
-        print(f"🧠 长期记忆已加载，已有 {self.memory_count} 条记忆")
+        logger.info(f"长期记忆已加载，已有 {self.memory_count} 条记忆")
 
     # ------------------------------------------------------------
     # 核心读写操作
@@ -104,10 +108,10 @@ class MemoryManager:
                 ids=[unique_id],
             )
             self.memory_count = self.collection.count()
-            print(f"💾 新增记忆 ({self.memory_count}): {text[:50]}...")
+            logger.info(f"新增记忆 ({self.memory_count}): {text[:50]}...")
             return True
         except Exception as e:
-            print(f"❌ 存储记忆失败: {e}")
+            logger.error(f"存储记忆失败: {e}")
             return False
 
     def query_memories(self, query: str, k: int = 5,
@@ -127,7 +131,7 @@ class MemoryManager:
                 return results["documents"][0]
             return []
         except Exception as e:
-            print(f"❌ 检索记忆失败: {e}")
+            logger.error(f"检索记忆失败: {e}")
             return []
 
     # ------------------------------------------------------------
@@ -169,7 +173,7 @@ class MemoryManager:
                 memories.sort(key=lambda x: x.get("timestamp", ""), reverse=True)
             return memories
         except Exception as e:
-            print(f"❌ 获取记忆列表失败: {e}")
+            logger.error(f"获取记忆列表失败: {e}")
             return []
 
     def delete_memory_by_id(self, memory_id: str) -> bool:
@@ -179,7 +183,7 @@ class MemoryManager:
             self.memory_count = self.collection.count()
             return True
         except Exception as e:
-            print(f"❌ 删除记忆失败: {e}")
+            logger.error(f"删除记忆失败: {e}")
             return False
 
     def clear_memories(self, user_id: str = "default") -> bool:
@@ -189,10 +193,10 @@ class MemoryManager:
             if all_items and all_items["ids"]:
                 self.collection.delete(ids=all_items["ids"])
             self.memory_count = self.collection.count()
-            print(f"🧹 已清除 {user_id} 的所有记忆")
+            logger.info(f"已清除 {user_id} 的所有记忆")
             return True
         except Exception as e:
-            print(f"❌ 清除记忆失败: {e}")
+            logger.error(f"清除记忆失败: {e}")
             return False
 
 
@@ -273,5 +277,5 @@ def extract_memories_from_conversation(
         return lines
 
     except Exception as e:
-        print(f"❌ 提取记忆失败: {e}")
+        logger.error(f"提取记忆失败: {e}")
         return []

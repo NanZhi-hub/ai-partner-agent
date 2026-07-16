@@ -10,6 +10,9 @@ from typing import Optional, List, Dict
 from .llm_client import HelloAgentsLLM
 from .tools import get_tool_descriptions, execute_tool
 from .memory import MemoryManager, extract_memories_from_conversation
+from .logger import get_logger
+
+logger = get_logger("agent.react_agent")
 
 # Windows 终端 UTF-8 兼容
 if sys.stdout.encoding != 'utf-8':
@@ -159,9 +162,9 @@ class ReActAgent:
                 return response
 
             # 执行工具
-            print(f"  🎬 第{step}步: {action_name}[{action_arg}]")
+            logger.info(f"🎬 第{step}步: {action_name}[{action_arg}]")
             observation = execute_tool(action_name, action_arg)
-            print(f"  👀 观察: {observation[:100]}...")
+            logger.info(f"👀 观察: {observation[:150]}...")
 
             # 记录到 react 历史
             react_history.append(f"Thought: {thought}")

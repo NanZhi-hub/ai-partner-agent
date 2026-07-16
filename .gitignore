@@ -220,3 +220,6 @@ __marimo__/
 # ChromaDB long-term memory storage
 memory_store/
 
+# Log files
+logs/
+

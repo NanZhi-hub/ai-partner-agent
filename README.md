@@ -16,17 +16,19 @@
 - 🌤️ **天气查询** — 全球城市实时天气
 - 💬 **双模式切换** — 日常聊天 / 智能助手（ReAct）
 - 🧠 **长期记忆** — ChromaDB 向量数据库，跨会话记住用户偏好（自动提取 + 语义检索）
+- 📝 **日志系统** — 分级日志（INFO/WARNING/ERROR），控制台+文件双输出，按日轮转
 - 💾 **会话管理** — 保存 / 加载 / 删除对话历史
 
 ## 技术栈
 
-| 层    | 技术                           |
-| ----- | ------------------------------ |
-| UI    | Streamlit                      |
-| Agent | ReAct 范式（纯手动实现）       |
-| LLM   | DeepSeek API                   |
-| 工具  | Tavily / Calculator / wttr.in  |
-| 记忆  | ChromaDB（向量语义检索 + RAG） |
+| 层      | 技术                                     |
+| ------- | ---------------------------------------- |
+| UI      | Streamlit                                |
+| Agent   | ReAct 范式（纯手动实现）                 |
+| LLM     | DeepSeek API                             |
+| 工具    | Tavily / Calculator / wttr.in            |
+| 记忆    | ChromaDB（向量语义检索 + RAG）           |
+| 日志    | 自定义 logging 模块（控制台 + 文件输出） |
 
 ## 架构
 
@@ -85,10 +87,12 @@ ai-partner-agent/
 ├── app.py                  # Streamlit UI 入口
 ├── agent/
 │   ├── __init__.py
+│   ├── logger.py            # 日志模块（分级 + 文件输出）
 │   ├── llm_client.py       # LLM 调用封装（流式/非流式）
 │   ├── react_agent.py      # ReAct 循环引擎
 │   ├── tools.py            # 工具注册表（搜索/计算/天气）
 │   └── memory.py           # ChromaDB 长期记忆管理器
+├── logs/                    # 日志文件（按日轮转，保留7天）
 ├── sessions/               # 会话持久化存储
 ├── memory_store/           # 长期记忆向量数据库存储
 ├── .env.example            # 环境变量模板

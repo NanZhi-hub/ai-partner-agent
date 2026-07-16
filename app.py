@@ -12,6 +12,9 @@ import datetime
 from agent.llm_client import HelloAgentsLLM
 from agent.react_agent import ReActAgent
 from agent.memory import MemoryManager
+from agent.logger import get_logger
+
+logger = get_logger("app")
 
 # Windows 终端兼容
 if sys.stdout.encoding != 'utf-8':
@@ -319,14 +322,14 @@ if prompt:
                             prompt, response, st.session_state.messages[:-1]
                         )
                     except Exception as e:
-                        print(f"🧠 记忆提取跳过: {e}")
+                        logger.warning(f"记忆提取跳过: {e}")
 
                     save_session()
 
                 except Exception as e:
                     error_msg = f"处理出错: {e}"
                     st.error(error_msg)
-                    print("错误:", e)
+                    logger.error(f"Agent 模式处理出错: {e}")
 
     else:
         # ======== 日常聊天模式（直接 LLM 调用 + 流式） ========
@@ -379,10 +382,10 @@ if prompt:
                         prompt, full_response, st.session_state.messages[:-1]
                     )
                 except Exception as e:
-                    print(f"🧠 聊天模式记忆提取跳过: {e}")
+                    logger.warning(f"聊天模式记忆提取跳过: {e}")
 
                 save_session()
 
         except Exception as e:
             st.error(f"调用AI失败：{e}")
-            print("错误:", e)
+            logger.error(f"聊天模式调用失败: {e}")
