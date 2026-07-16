@@ -11,6 +11,7 @@ import datetime
 
 from agent.llm_client import HelloAgentsLLM
 from agent.react_agent import ReActAgent
+from agent.memory import MemoryManager
 
 # Windows 终端兼容
 if sys.stdout.encoding != 'utf-8':
@@ -37,12 +38,17 @@ def init_llm():
     return HelloAgentsLLM()
 
 @st.cache_resource
-def init_agent(_llm):
-    return ReActAgent(llm=_llm)
+def init_memory():
+    return MemoryManager()
+
+@st.cache_resource
+def init_agent(_llm, _memory):
+    return ReActAgent(llm=_llm, memory_manager=_memory)
 
 
 llm = init_llm()
-agent = init_agent(llm)
+memory = init_memory()
+agent = init_agent(llm, memory)
 
 # ============================================================
 # 工具函数：会话管理
@@ -240,6 +246,29 @@ with st.sidebar:
 
     st.divider()
 
+    # ---------- 长期记忆查看器 ----------
+    st.subheader("🧠 长期记忆")
+    all_memories = memory.get_all_memories()
+    if all_memories:
+        st.caption(f"共记住 {len(all_memories)} 条信息")
+        for m in all_memories:
+            col1, col2 = st.columns([5, 1])
+            with col1:
+                st.caption(f"📌 {m['text']}")
+            with col2:
+                if st.button("✕", key=f"del_mem_{m['id']}", use_container_width=True):
+                    memory.delete_memory_by_id(m['id'])
+                    st.rerun()
+    else:
+        st.caption("还没有记住任何信息 💭")
+        st.caption("和 Agent 聊聊天，它会自动记住你的偏好")
+
+    if st.button("🗑️ 清除所有记忆", use_container_width=True, type="secondary"):
+        memory.clear_memories()
+        st.rerun()
+
+    st.divider()
+
     # ---------- 项目信息 ----------
     st.caption("---")
     st.caption("🤖 AI Partner Agent v2.0")
@@ -283,6 +312,15 @@ if prompt:
                     st.session_state.messages.append(
                         {"role": "assistant", "content": response}
                     )
+
+                    # 提取并存储长期记忆（后台异步风格）
+                    try:
+                        agent.record_interaction(
+                            prompt, response, st.session_state.messages[:-1]
+                        )
+                    except Exception as e:
+                        print(f"🧠 记忆提取跳过: {e}")
+
                     save_session()
 
                 except Exception as e:
@@ -334,6 +372,15 @@ if prompt:
                 st.session_state.messages.append(
                     {"role": "assistant", "content": full_response}
                 )
+
+                # 聊天模式也提取记忆
+                try:
+                    agent.record_interaction(
+                        prompt, full_response, st.session_state.messages[:-1]
+                    )
+                except Exception as e:
+                    print(f"🧠 聊天模式记忆提取跳过: {e}")
+
                 save_session()
 
         except Exception as e:

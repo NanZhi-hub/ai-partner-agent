@@ -9,6 +9,7 @@ from typing import Optional, List, Dict
 
 from .llm_client import HelloAgentsLLM
 from .tools import get_tool_descriptions, execute_tool
+from .memory import MemoryManager, extract_memories_from_conversation
 
 # Windows 终端 UTF-8 兼容
 if sys.stdout.encoding != 'utf-8':
@@ -23,6 +24,7 @@ REACT_SYSTEM_TEMPLATE = """
 你可以使用以下工具来帮助回答用户的问题：
 
 {tools}
+{memories}
 
 请严格按照以下格式回应：
 
@@ -45,19 +47,30 @@ class ReActAgent:
     """ReAct 智能体"""
 
     def __init__(self, llm: HelloAgentsLLM, name: str = "小甜甜", personality: str = "活泼开朗的南方姑娘",
-                 max_steps: int = 8):
+                 max_steps: int = 8, memory_manager: Optional[MemoryManager] = None):
         self.llm = llm
         self.name = name
         self.personality = personality
         self.max_steps = max_steps
+        self.memory_manager = memory_manager
 
-    def _build_system_prompt(self) -> str:
-        """构建系统提示词"""
+    def _build_system_prompt(self, user_input: str = "") -> str:
+        """构建系统提示词，注入相关记忆"""
         tools_desc = get_tool_descriptions()
+
+        # 如果有记忆管理器，注入相关记忆
+        memories_context = ""
+        if self.memory_manager:
+            memories_context = self.memory_manager.get_memory_context(
+                query=user_input or "用户信息",
+                k=5,
+            )
+
         return REACT_SYSTEM_TEMPLATE.format(
             name=self.name,
             personality=self.personality,
             tools=tools_desc,
+            memories=memories_context,
         )
 
     def _parse_action(self, response: str) -> tuple:
@@ -107,7 +120,7 @@ class ReActAgent:
                 role = "用户" if msg["role"] == "user" else "你"
                 history_str += f"{role}: {msg['content']}\n"
 
-        system_prompt = self._build_system_prompt()
+        system_prompt = self._build_system_prompt(user_input=user_input)
 
         # ReAct 循环
         react_history = []
@@ -159,3 +172,36 @@ class ReActAgent:
             current_input = f"工具 '{action_name}' 返回: {observation}\n\n请根据这个结果继续，如果信息足够请用 Finish 给出最终答案。"
 
         return "我思考了太久，怕你等急了。要不我们换个话题？😅"
+
+    def record_interaction(self, user_input: str, agent_response: str,
+                           chat_history: List[Dict] = None) -> None:
+        """
+        记录一次对话交互到长期记忆
+
+        Args:
+            user_input: 用户输入
+            agent_response: Agent 回复
+            chat_history: 本次交互前的完整聊天历史
+        """
+        if not self.memory_manager:
+            return
+
+        # 构建对话文本供 LLM 提取记忆
+        conv_lines = [f"用户: {user_input}", f"你: {agent_response}"]
+
+        if chat_history:
+            recent = chat_history[-8:]
+            for msg in recent:
+                role = "用户" if msg["role"] == "user" else "你"
+                conv_lines.insert(0, f"{role}: {msg['content']}")
+
+        conversation_text = "\n".join(conv_lines)
+
+        # 用 LLM 提取记忆
+        new_memories = extract_memories_from_conversation(
+            conversation_text, self.llm
+        )
+
+        # 存储提取出的记忆
+        for mem_text in new_memories:
+            self.memory_manager.store_memory(mem_text)
